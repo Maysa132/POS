@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ร้านมัทฉะในฝัน — ระบบ POS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="appbar">
+  <div class="brand">
+    <div class="brand-mark">抹</div>
+    <div class="brand-text">
+      <strong id="shopName">ร้านมัทฉะในฝัน</strong>
+      <span id="shopTag">Matcha Specialty · POS</span>
+    </div>
+  </div>
+  <div class="appbar-right">
+    <span class="clock" id="clock"></span>
+    <button class="icon-btn" id="themeBtn" title="สลับโหมดสว่าง/มืด" aria-label="สลับโหมดสว่าง/มืด">◐</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab is-active" data-view="pos"><span class="ti">🧾</span>ขาย</button>
+  <button class="tab" data-view="stock"><span class="ti">📦</span>สต็อก</button>
+  <button class="tab" data-view="menu"><span class="ti">🍵</span>เมนู &amp; สูตร</button>
+  <button class="tab" data-view="history"><span class="ti">📋</span>ประวัติ</button>
+  <button class="tab" data-view="close"><span class="ti">🔐</span>ปิดยอด</button>
+  <button class="tab" data-view="report"><span class="ti">📈</span>สรุป</button>
+  <button class="tab" data-view="settings"><span class="ti">⚙️</span>ตั้งค่า</button>
+</nav>
+
+<main id="main">
+  <!-- ---------------------------- ขาย ---------------------------- -->
+  <section class="view" id="view-pos">
+    <div class="breakeven-bar is-hidden" id="beBar"></div>
+    <div class="pos-grid">
+      <div class="pos-left">
+        <div class="toolbar">
+          <input type="search" id="menuSearch" class="input" placeholder="ค้นหาเมนู…">
+          <div class="chips" id="platformChips"></div>
+        </div>
+        <div class="toolbar is-hidden" id="payRow">
+          <span class="toolbar-label">รับเงินทาง</span>
+          <div class="chips" id="payChips"></div>
+        </div>
+        <div class="menu-grid" id="menuGrid"></div>
+      </div>
+
+      <aside class="pos-right">
+        <div class="cart-card">
+          <div class="cart-head">
+            <h2>ตะกร้า</h2>
+            <button class="link-btn" id="clearCart">ล้าง</button>
+          </div>
+          <div class="cart-lines" id="cartLines"></div>
+          <div class="cart-foot">
+            <label class="field-inline">
+              <span>ส่วนลด (บาท)</span>
+              <input type="number" id="discount" class="input input-sm" value="0" min="0" step="1">
+            </label>
+            <dl class="totals" id="cartTotals"></dl>
+            <div class="cash-row is-hidden" id="cashRow">
+              <label class="field-inline">
+                <span>รับเงินมา</span>
+                <input type="number" id="received" class="input input-sm" min="0" step="1" placeholder="0">
+              </label>
+              <div class="chips" id="quickCash"></div>
+              <div class="change-out" id="changeOut"></div>
+            </div>
+            <button class="btn btn-primary btn-lg" id="checkoutBtn" disabled>ชำระเงิน</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ---------------------------- สต็อก ---------------------------- -->
+  <section class="view is-hidden" id="view-stock">
+    <div class="view-head">
+      <h2>สต็อกวัตถุดิบ</h2>
+      <div class="view-actions">
+        <button class="btn" id="addIngBtn">+ เพิ่มวัตถุดิบ</button>
+        <button class="btn btn-primary" id="receiveBtn">รับสินค้าเข้า</button>
+      </div>
+    </div>
+    <div id="stockAlerts"></div>
+    <h3 class="section-title">ผงมัทฉะ</h3>
+    <div class="table-wrap" id="matchaTable"></div>
+    <h3 class="section-title">วัตถุดิบ &amp; บรรจุภัณฑ์</h3>
+    <div class="table-wrap" id="otherTable"></div>
+    <h3 class="section-title" id="lotTitle">คิวล็อต</h3>
+    <p class="lot-note" id="lotNote"></p>
+    <div class="table-wrap" id="lotTable"></div>
+    <h3 class="section-title">ความเคลื่อนไหวล่าสุด</h3>
+    <div class="table-wrap" id="movesTable"></div>
+  </section>
+
+  <!-- ---------------------------- เมนู ---------------------------- -->
+  <section class="view is-hidden" id="view-menu">
+    <div class="view-head">
+      <h2>เมนู &amp; สูตร</h2>
+      <div class="view-actions">
+        <button class="btn btn-primary" id="addMenuBtn">+ เพิ่มเมนู</button>
+      </div>
+    </div>
+    <div id="menuCards"></div>
+  </section>
+
+  <!-- ---------------------------- ประวัติ ---------------------------- -->
+  <section class="view is-hidden" id="view-history">
+    <div class="view-head">
+      <h2>ประวัติการขาย</h2>
+      <div class="view-actions">
+        <button class="btn" id="exportSalesBtn">ดาวน์โหลด CSV</button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <label class="field-inline"><span>ตั้งแต่</span><input type="date" id="fromDate" class="input input-sm"></label>
+      <label class="field-inline"><span>ถึง</span><input type="date" id="toDate" class="input input-sm"></label>
+      <label class="field-inline"><span>ช่องทาง</span><select id="historyPlatform" class="input input-sm"></select></label>
+    </div>
+    <div id="historySummary" class="kpi-row"></div>
+    <div class="table-wrap" id="historyTable"></div>
+  </section>
+
+  <!-- ---------------------------- ปิดยอด ---------------------------- -->
+  <section class="view is-hidden" id="view-close">
+    <div class="view-head">
+      <h2>ปิดยอดรายวัน</h2>
+      <div class="view-actions">
+        <label class="field-inline"><span>วันที่</span><input type="date" id="closeDate" class="input input-sm"></label>
+      </div>
+    </div>
+    <div id="closeBody"></div>
+    <h3 class="section-title">ประวัติการปิดยอด</h3>
+    <div class="table-wrap" id="closeHistory"></div>
+  </section>
+
+  <!-- ---------------------------- สรุป ---------------------------- -->
+  <section class="view is-hidden" id="view-report">
+    <div class="view-head">
+      <h2>สรุปผลประกอบการ</h2>
+      <div class="chips" id="periodChips"></div>
+    </div>
+    <div id="reportKpi" class="kpi-row"></div>
+    <div class="card is-hidden" id="breakEvenCard">
+      <h3 class="section-title">จุดคุ้มทุน</h3>
+      <div id="breakEvenBody"></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <h3 class="section-title">กำไรรายวัน</h3>
+        <div id="profitChart" class="chart"></div>
+      </div>
+      <div class="card">
+        <h3 class="section-title">ยอดขายตามช่องทาง</h3>
+        <div class="table-wrap" id="platformTable"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="section-title">เมนูขายดี</h3>
+      <div class="table-wrap" id="topMenuTable"></div>
+    </div>
+  </section>
+
+  <!-- ---------------------------- ตั้งค่า ---------------------------- -->
+  <section class="view is-hidden" id="view-settings">
+    <div class="view-head"><h2>ตั้งค่า</h2></div>
+
+    <div class="card">
+      <h3 class="section-title">ข้อมูลร้าน</h3>
+      <div class="form-row">
+        <label class="field"><span>ชื่อร้าน</span><input class="input" id="setShopName"></label>
+        <label class="field"><span>คำอธิบายใต้ชื่อ</span><input class="input" id="setShopTag"></label>
+      </div>
+      <div class="form-row">
+        <label class="field"><span>เลขประจำตัวผู้เสียภาษี (ถ้ามี)</span><input class="input" id="setTaxId" placeholder="พิมพ์ลงใบกำกับภาษีอย่างย่อ"></label>
+        <label class="field"><span>เงินทอนตั้งต้นประจำวัน (บาท)</span><input class="input" id="setFloat" type="number" min="0" step="100"></label>
+      </div>
+      <button class="btn btn-primary" id="saveShopBtn">บันทึก</button>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">ภาษีมูลค่าเพิ่ม (VAT)</h3>
+      <div class="form-row">
+        <label class="field-inline"><input type="checkbox" id="vatEnabled"><span>คิด VAT</span></label>
+        <label class="field"><span>อัตรา (%)</span><input class="input" id="vatRate" type="number" min="0" max="30" step="0.5"></label>
+        <label class="field"><span>รูปแบบราคา</span><select class="input" id="vatMode">
+          <option value="inclusive">ราคาที่ตั้งไว้รวม VAT แล้ว</option>
+          <option value="exclusive">บวก VAT เพิ่มจากราคาที่ตั้งไว้</option>
+        </select></label>
+      </div>
+      <p class="hint" id="vatExample"></p>
+      <p class="hint">กำไรสุทธิคำนวณจากรายได้ <strong>หลังหัก VAT</strong> แล้ว เพราะ VAT เป็นเงินที่ต้องนำส่งสรรพากร ไม่ใช่รายได้ของร้าน
+        ส่วนค่า GP คิดจากยอดเต็มที่ลูกค้าจ่าย ตรงกับที่แพลตฟอร์มหักจริง</p>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">วิธีตัดสต็อก</h3>
+      <div class="form-row">
+        <label class="field"><span>ลำดับการหยิบใช้</span><select class="input" id="stockMethod">
+          <option value="fefo">FEFO — ใช้ของที่จะหมดอายุก่อน</option>
+          <option value="fifo">FIFO — ใช้ของที่รับเข้าก่อน</option>
+        </select></label>
+        <label class="field"><span>เตือนใกล้หมดอายุล่วงหน้า (วัน)</span><input class="input" id="expiryWarn" type="number" min="0" max="365" step="1"></label>
+      </div>
+      <p class="hint">
+        ทุกครั้งที่รับของเข้าจะถูกเก็บเป็น “ล็อต” แยกกัน พร้อมจำราคาซื้อและวันหมดอายุของรอบนั้นไว้
+        ต้นทุนของแต่ละบิลจึงเป็นราคาจริงของของที่ถูกใช้ ไม่ใช่ราคาซื้อล่าสุด<br>
+        <strong>FEFO</strong> เหมาะกับของที่เสื่อมสภาพอย่างผงมัทฉะและนม — ใช้ของที่จะหมดอายุก่อนเสมอ
+        ล็อตที่ไม่ได้ระบุวันหมดอายุจะไปต่อท้ายคิว<br>
+        ดูคิวล็อตได้ที่แท็บ <strong>สต็อก</strong> และดูต้นทุนรายบิลได้ที่ปุ่ม <strong>ต้นทุน</strong> ในแท็บประวัติ
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">ค่าใช้จ่ายคงที่ &amp; จุดคุ้มทุน</h3>
+      <p class="hint">กรอกค่าใช้จ่ายที่ต้องจ่ายไม่ว่าจะขายได้หรือไม่ ระบบจะเฉลี่ยเป็นรายวันแล้วบอกว่าวันหนึ่งต้องขายกี่แก้วถึงคุ้ม</p>
+      <div class="table-wrap" id="fixedCostTable"></div>
+      <div class="btn-row">
+        <button class="btn" id="addFixedBtn">+ เพิ่มรายการ</button>
+        <label class="field-inline"><span>เปิดร้านเดือนละ</span>
+          <input class="input input-sm" id="openDays" type="number" min="1" max="31" step="1"><span>วัน</span></label>
+      </div>
+      <p class="hint" id="fixedSummary"></p>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">ช่องทางขาย &amp; ค่า GP</h3>
+      <p class="hint">ค่า GP คือส่วนแบ่งที่แพลตฟอร์มหัก จากไฟล์ Excel มีเฉพาะ Grab 35% ช่องทางอื่นแก้ตัวเลขให้ตรงสัญญาจริงของร้านได้</p>
+      <div class="table-wrap" id="platformSettings"></div>
+      <button class="btn" id="addPlatformBtn">+ เพิ่มช่องทาง</button>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">ข้อมูล &amp; สำรองข้อมูล</h3>
+      <p class="hint">ข้อมูลทั้งหมดเก็บอยู่ในเครื่องนี้ (localStorage ของเบราว์เซอร์) แนะนำให้กดสำรองข้อมูลเก็บไว้เป็นระยะ</p>
+      <div class="btn-row">
+        <button class="btn" id="backupBtn">สำรองข้อมูล (.json)</button>
+        <button class="btn" id="restoreBtn">กู้คืนจากไฟล์</button>
+        <input type="file" id="restoreFile" accept="application/json" hidden>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-danger-ghost" id="resetSalesBtn">ล้างประวัติการขาย (คืนสต็อก)</button>
+        <button class="btn btn-danger-ghost" id="resetAllBtn">รีเซ็ตกลับค่าเริ่มต้น</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-root is-hidden" id="modalRoot">
+  <div class="modal-backdrop" data-close="1"></div>
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button class="icon-btn" data-close="1" aria-label="ปิด">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot" id="modalFoot"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div id="printArea"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
